@@ -43,14 +43,15 @@ generate_time_series <- function(eqns_per,
 generate_time_series_LV <- function(Sigma, r, state_initial, time_range) {
   alpha <- Sigma
   parms <- list(r = r, alpha = alpha)
-  delta_t <- 0.01 # time step
-  time_step <- seq(0, max(time_range), by = delta_t) # sequence of time
+  # delta_t <- 0.01 # time step
+  # time_step <- seq(0, max(time_range), by = delta_t) # sequence of time
   model <- function(t, N, parms) {
     dN <- N * (parms$r + parms$alpha %*% N) + 1e-14
     list(dN)
   }
-  sol <- ode(state_initial, time_step, model, parms, method = "ode45")
-  return(sol)
+  ode(state_initial, time_range, model, parms, method = "ode45") %>%
+    as_tibble() %>%
+    mutate_all(as.numeric)
 }
 
 

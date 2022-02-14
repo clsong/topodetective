@@ -54,13 +54,12 @@ choose_regression_model <- function(model_name) {
 
 #' Fit interaction matrix with given topology and intrinsic growth rates from time series
 #'
-#' @return A tibble with simulated time series of species abundances
-#' @param Sigma Interaction matrix
-#' @param r intrinsic growth rates
-#' @param state_initial
-#' @param time_range
+#' @return A tibble with fitted parameters
+#' @param ts_species
+#' @param reg_model
+#' @param topology_all
 #' @export
-fit_parameters <- function(ts_species,
+fit_interaction_parameters <- function(ts_species,
                            reg_model = choose_regression_model("linear"),
                            topology_all) {
   species_num <- ncol(ts_species) - 3
@@ -100,158 +99,114 @@ fit_parameters <- function(ts_species,
 
   fitted_models %>%
     mutate(
-      r2 = map_dbl(workflow_fitted, ~ glance(.)$r.squared),
+      R2 = map_dbl(workflow_fitted, ~ glance(.)$r.squared),
       estimate = map(workflow_fitted, tidy)
     ) %>%
     unnest(estimate) %>%
-    select(topology, r2, term, estimate) %>%
+    select(topology, R2, term, estimate) %>%
     pivot_wider(names_from = term, values_from = estimate) %>%
     rename(r = `(Intercept)`)
 }
 
-fit_simulation <- function(fitted, map = F) {
-  if (map == T) pb$tick()$print()
-
-  Sigma <- fitted %>%
-    select(-r) %>%
+#' Simulate time series from fitted parameters
+#'
+#' @return A tibble with simulated time series of species abundances
+#' @param topology_fitted
+#' @export
+simualte_fitted_dynamics <- function(topology_fitted){
+                           # state_initial = state_initial,
+                           # time_range = time_range) {
+  Sigma <- topology_fitted %>%
+    select(starts_with("x")) %>%
+    mutate(
+      across(everything(), ~replace_na(.x, 0))
+    ) %>%
     as.matrix()
 
-  r <- fitted[, 1] %>% unlist()
-
-  generate_time_series_LV(Sigma, r = r, N0 = state_initial, MaxTime = max(time_range)) %>%
-    as_tibble()
-}
-
-plot_interactions <- function(fitted, topology_ground) {
-  bind_cols(
-    fitted %>%
-      select(-r) %>%
-      as.matrix() %>%
-      magrittr::set_colnames(1:4) %>%
-      magrittr::set_rownames(1:4) %>%
-      melt() %>%
-      rename(fit = value),
-    topology_ground %>%
-      as.matrix() %>%
-      magrittr::set_rownames(1:4) %>%
-      melt() %>%
-      rename(ground = value)
-  ) %>%
-    ggplot(aes(ground, fit)) +
-    geom_point(size = 2) +
-    geom_abline(slope = 1, intercept = 0) +
-    theme_bw() +
-    theme(aspect.ratio = 1)
-}
-
-plot_topology <- function(fitted) {
-  num <- ncol(fitted) - 1
-
-  n <- tibble(
-    name = 1:num,
-    width = .2
-  ) %>%
-    mutate(
-      id_external = name
-    )
-  e <- fitted %>%
-    select(-r) %>%
-    as.matrix() %>%
-    magrittr::set_colnames(1:num) %>%
-    magrittr::set_rownames(1:num) %>%
-    melt() %>%
-    rename(
-      from = Var1,
-      to = Var2
-    ) %>%
-    mutate(color = if_else(value > 0, "dodgerblue", "firebrick2")) %>%
-    mutate(value = abs(2 * value))
-
-  create_graph() %>%
-    add_nodes_from_table(
-      table = n
-    ) %>%
-    add_edges_from_table(
-      table = e,
-      from_col = from,
-      to_col = to,
-      from_to_map = id_external
-    ) %>%
-    copy_edge_attrs(
-      edge_attr_from = value,
-      edge_attr_to = penwidth
-    ) %>%
-    render_graph(layout = "circular")
-}
-
-plot_fit_vs_simu <- function(dataset, times, simu, save = F, topology_label = F) {
-  p <- bind_rows(
-    dataset %>%
-      as_tibble() %>%
-      mutate(time = times) %>%
-      gather(key, value, -time) %>%
-      mutate(type = "ground truth"),
-    simu %>%
-      gather(key, value, -time) %>%
-      mutate(type = "fitted")
-  ) %>%
-    ggplot(aes(time, value, group = type, color = type)) +
-    geom_rect(aes(xmin = 0, xmax = times[split_end], ymin = -Inf, ymax = Inf),
-      fill = "#F9F4FB", alpha = 1, linetype = 0
-    ) +
-    geom_rect(aes(xmin = times[split_end], xmax = max(times), ymin = -Inf, ymax = Inf),
-      fill = "#FEF7F2", alpha = 1, linetype = 0
-    ) +
-    geom_line() +
-    facet_wrap(~key) +
-    scale_colour_manual(values = c("dodgerblue", "#FCBF4A")) +
-    theme_classic() +
-    theme(
-      aspect.ratio = 1
-    )
-
-  if (save == T) {
-    ggsave(paste0(topology_label, "-fit_vs_simu.pdf"), p)
-  } else {
-    p
-  }
-}
-
-calculate_NRMSE <- function(sim, obs) {
-  # (sim-obs)^2 %>%
-  #   mean() %>%
-  #   sqrt()/mean(obs)
-
-  sqrt(mean(sim - obs)^2) / (max(obs) - mean(obs))
-}
-
-evaluate_fit <- function(simu, dataset, map = F) {
-  if (map == T) pb$tick()$print()
-
-  x <- simu %>%
-    filter(time %in% time_range) %>%
-    gather(key, value_simu, -time) %>%
-    mutate_at(c("time", "value_simu"), as.numeric)
-
-  y <- dataset %>%
-    gather(key, value_ground, -time)
-
-  left_join(x, y) %>%
-    group_by(key) %>%
-    summarise(
-      NRMSE = calculate_NRMSE(value_simu, value_ground),
-      correlation = cor(value_simu, value_ground)
-    )
-}
-
-generate_topology <- function(all_topologies, j) {
-  offdiag <- all_topologies[j, ] %>%
+  r <- topology_fitted %>%
+    pull(r) %>%
     unlist()
 
-  topology <- matrix(NA, ncol = num, nrow = num)
-  topology[lower.tri(topology)] <- offdiag[1:(length(offdiag) / 2)]
-  topology[upper.tri(topology)] <- offdiag[-(1:(length(offdiag) / 2))]
-  diag(topology) <- rep(1, num)
+  generate_time_series_LV(
+    Sigma = Sigma,
+    r = r,
+    state_initial = state_initial,
+    time_range = time_range
+  )
+}
 
-  topology
+#' Plot simulated time series with fitted parameters vs true time series
+#'
+#' @return A ggplot2 object
+#' @param ts
+#' @param ts_simu
+#' @export
+plot_true_vs_simu <- function(ts, ts_simu) {
+
+  bind_rows(
+    ts %>%
+      mutate(type = 'true'),
+    ts_simu %>%
+      mutate(type = 'simulated')
+  ) %>%
+    gather(species, abundance, -time, -type) %>%
+    ggplot(aes(time, abundance, group = type, color = type)) +
+    geom_line()+
+    facet_wrap(~species)+
+    theme_nice() +
+    theme(
+      legend.position = 'top',
+      legend.title = element_blank()
+    )
+
+  # if (save == T) {
+  #   ggsave(paste0(topology_label, "-fit_vs_simu.pdf"), p)
+  # } else {
+  #   p
+  # }
+}
+
+#' Evaluate how close the simulated time series with fitted parameters is to true time series
+#'
+#' @return value of NRMSE
+#' @param ts
+#' @param ts_simu
+#' @export
+evaluate_fit <- function(ts, ts_simu) {
+  calculate_NRMSE <- function(sim, obs) {
+    sqrt(mean(sim - obs)^2) / (max(obs) - mean(obs))
+  }
+
+  2:ncol(ts) %>%
+    map_dbl(~calculate_NRMSE(unlist(ts_simu[,.]), unlist(ts[,.]))) %>%
+    mean()
+}
+
+#' EPlot the interaction network
+#'
+#' @return A ggraph project
+#' @param topology
+#' @export
+plot_interaction_topology <- function(topology) {
+  tbl_graph(
+    nodes = topology %>%
+      select(species, r),
+    edges = topology %>%
+      select(-r) %>%
+      gather(from, strength, -species) %>%
+      filter(from %in% topology$species) %>%
+      unnest(strength) %>%
+      filter(strength != 0) %>%
+      filter(!is.na(strength)) %>%
+      rename(to = species)
+    ) %>%
+    ggraph(layout = 'kk') +
+    geom_edge_fan(aes(color = strength),
+                  arrow = arrow(length = unit(4, 'mm')),
+                  end_cap = circle(6, 'mm')) +
+    geom_node_point(aes(size = r)) +
+    geom_edge_loop(aes(colour = strength)) +
+    scale_edge_colour_viridis() +
+    theme_graph(foreground = 'steelblue', fg_text_colour = 'white') +
+    theme(aspect.ratio = 1)
 }

@@ -14,32 +14,11 @@ library(parsnip)
 library(workflows)
 library(tune)
 library(yardstick)
-# library(here)
-# library(Matrix)
-# library(compiler)
-# library(lars)
-# library(elasticnet)
-# library(tidyverse)
-# library(reshape2)
+library(patchwork)
+library(tidygraph)
+library(ggraph)
 
-# library(cowplot)
-# library(rEDM)
-# library(limSolve)
-# library(Matrix)
-# library(pspline)
-# library(Deriv)
-# library(deSolve)
-# library(readxl)
-# library(readr)
-# library(ggrepel)
-# library(corrplot)
-# library(DiagrammeR)
-# library(rlang)
-
-# source("R/equations.r")
-# source("R/solve_ODEs.R")
-# source("R/fit_trajectory.R")
-
+theme_set(jtools::theme_nice())
 library(InferInteractions)
 
 get_classic_dynamics("chaos") # choose a dynamic
@@ -51,101 +30,33 @@ plot_time_series(ts)
 
 # fitted ------------------------------------------------------------------
 
-ts_tidy <- preprocess_ts(ts)
-
-ts_species <- ts_tidy %>%
-  filter(species == 'x1')
 reg_model <- choose_regression_model("linear")
 
-topology <- topology_ground
-topology[topology != 0 ] <- 1
+fitted_models <- ts %>%
+  preprocess_ts() %>%
+  group_split(species) %>%
+  map(fit_interaction_parameters) %>%
+  bind_rows(.id = 'species') %>%
+  mutate(species = paste0("x", species))
 
-fitted <- fit_parameters(train_ts, topology)
-simu <- fit_simulation(fitted)
+# fitted_models %>%
+#   mutate(topology_label = as.factor(topology_label)) %>%
+#   ggplot(aes(forcats::fct_reorder(topology_label, r2), r2, color = species)) +
+#   geom_point()
 
-evaluate_fit(simu, ts)
+topology_fitted <- fitted_models %>%
+  filter(R2 > .8) %>%
+  group_by(species) %>%
+  sample_n(1) %>%
+  # filter(R2 == max(R2)) %>%
+  ungroup()
 
-plot_topology(fitted)
-plot_fit_vs_simu(dataset, times, simu)
+# topology_ground
 
-# exmaine all topologies-----------------------------------------------------------------
-all_topologies <- rep(list(0:1), num^2 - num) %>%
-  expand.grid() %>%
-  as_tibble()
+ts_simu <- simualte_fitted_dynamics(topology_fitted)
 
-pb <- progress_estimated(nrow(all_topologies))
-all_fitted <- 1:nrow(all_topologies) %>%
-  map(~generate_topology(all_topologies, .)) %>%
-  map(~fit_parameters(train, ., map = T))
+plot_true_vs_simu(ts, ts_simu)
+evaluate_fit(ts, ts_simu)
 
-pb <- progress_estimated(length(all_fitted))
-all_fitted_evaluation <- all_fitted %>%
-  map(~fit_simulation(., map = T)) %>%
-  map(~evaluate_fit(., dataset))
-
-topology_label_accurate <- all_fitted_evaluation %>%
-  map_dfr(~summarise(.,
-                 cor = mean(correlation),
-                 NRMSE = mean(NRMSE))) %>%
-  mutate(topology_label = row_number()) %>%
-  arrange(NRMSE) %>%
-  # filter(cor > .95) %>%
-  filter(NRMSE < 0.005) %>%
-  pull(topology_label)
-
-topology_label_accurate %>%
-  map(~plot_fit_vs_simu(dataset, times, fit_simulation(all_fitted[[.]]), save = T, topology_label = .))
-
-topology_label_accurate %>%
-  map(~plot_topology(all_fitted[[.]]))
-
-topology_label_accurate %>%
-  map(~plot_interactions(all_fitted[[.]], topology_ground))
-
-# all_fitted_evaluation %>%
-#   map_dfr(~summarise(.,
-#                      cor = mean(correlation),
-#                      NRMSE = mean(NRMSE))) %>%
-#   mutate(topology_label = row_number()) %>%
-#   arrange(NRMSE)
-# dd
-
-# # maynard -----------------------------------------------------------------
-# adjacency_matrix <- matrix(c(-1, -1, -1, 0, 0, -1, -1,-1, -1, 0, -1, -1, -1, -1,-1,-1), byrow = T, ncol = 4)
-#
-# Jacobian_maynard <- get_Jacobian_maynard(dataset, times, adjacency_matrix)
-#
-# r_all <- Jacobian_maynard[[1]]
-# J_all <- Jacobian_maynard[[2]]
-#
-# J_all %>%
-#   ggplot(aes(x=time, y=J_maynard))+
-#   geom_line()+
-#   facet_grid(Var1~Var2)
-#
-# r_all %>%
-#   mutate(time = row_number()) %>%
-#   gather(key, value, -time) %>%
-#   ggplot(aes(time, value, color = key))+
-#   geom_line()
-#
-# Sigma <- J_all %>%
-#   filter(time == times[length(times)]) %>%
-#   select(-time) %>%
-#   spread(Var2, J_maynard) %>%
-#   select(-Var1) %>%
-#   as.matrix()
-#
-# r <- r_all[nrow(r_all), ] %>%
-#   unlist()
-#
-# simu <- SolutionOde(Sigma, r = r, N0 = state, MaxTime = 100) %>%
-#   as_tibble()
-#
-# simu %>%
-#   gather(variable, abundance, -time) %>%
-#   ggplot(aes(time, abundance, group=variable, color= variable))+
-#   geom_line()
-#
-#
-#
+plot_interaction_topology(topology_ground)
+plot_interaction_topology(topology_fitted)
