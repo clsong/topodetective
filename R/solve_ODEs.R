@@ -1,6 +1,5 @@
 #' Simulated time series of species abundances
 #'
-#' @import deSolve
 #' @return A tibble with simulated time series of species abundances
 #' @param eqns_per
 #' @param time_range
@@ -56,7 +55,6 @@ generate_time_series_LV <- function(Sigma, r, state_initial, time_range) {
 
 
 #' Plot time series of species abundance
-#'
 #' @return A ggplot2 object
 #' @param dataset
 #' @export
