@@ -24,7 +24,7 @@ This is a basic example which shows you how to solve a common problem:
 
 ``` r
 suppressPackageStartupMessages(library(tidyverse))
-library(InferInteractions)
+library(topodetective)
 #> Registered S3 method overwritten by 'tune':
 #>   method                   from   
 #>   required_pkgs.model_spec parsnip

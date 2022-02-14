@@ -35,7 +35,7 @@ This is a basic example which shows you how to solve a common problem:
 
 ```{r warning=F, dpi=300 }
 suppressPackageStartupMessages(library(tidyverse))
-library(InferInteractions)
+library(topodetective)
 
 get_classic_dynamics("4_species_chaos") # choose a population dynamic
 
