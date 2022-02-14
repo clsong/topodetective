@@ -17,7 +17,6 @@ Imports:
     ggplot2,
     ggraph,
     jtools,
-    magrittr,
     parsnip,
     patchwork,
     purrr,

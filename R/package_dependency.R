@@ -1,10 +1,9 @@
 #' @import deSolve
-#' @import magrittr
 #' @import purrr
 #' @import dplyr
 #' @import tidyr
 #' @import ggplot2
-#' @import jtools
+#' @importFrom jtools theme_nice
 #' @import rsample
 #' @import tibble
 #' @import broom

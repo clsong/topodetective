@@ -29,7 +29,7 @@ library(InferInteractions)
 #>   method                   from   
 #>   required_pkgs.model_spec parsnip
 
-get_classic_dynamics("chaos") # choose a population dynamic
+get_classic_dynamics("4_species_chaos") # choose a population dynamic
 
 ts <- generate_time_series(eqns_per, time_range, state_initial, species_num) # simulate a dynamic
 
@@ -43,7 +43,7 @@ possible topologies.
 reg_model <- choose_regression_model("linear")
 
 fitted_models <- ts %>%
-  preprocess_ts() %>%
+  differentiate_ts() %>%
   group_split(species) %>%
   map(fit_interaction_parameters) %>%
   bind_rows(.id = 'species') %>%
@@ -56,14 +56,14 @@ the fit.
 ``` r
 set.seed(123)
 topology_fitted <- fitted_models %>%
-  filter(R2 > .8) %>%
+  filter(R2 > .9) %>%
   group_by(species) %>%
   sample_n(1) %>%
   ungroup()
 
 ts_simu <- simualte_fitted_dynamics(topology_fitted)
 evaluate_fit(ts, ts_simu)
-#> [1] 0.02856362
+#> [1] 0.01749783
 
 plot_true_vs_simu(ts, ts_simu)
 ```

@@ -4,7 +4,10 @@
 \alias{plot_time_series}
 \title{Plot time series of species abundance}
 \usage{
-plot_time_series(dataset)
+plot_time_series(ts)
+}
+\arguments{
+\item{ts}{A tibble containing time series}
 }
 \value{
 A ggplot2 object

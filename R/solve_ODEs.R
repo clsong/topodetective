@@ -56,10 +56,10 @@ generate_time_series_LV <- function(Sigma, r, state_initial, time_range) {
 
 #' Plot time series of species abundance
 #' @return A ggplot2 object
-#' @param dataset
+#' @param ts A tibble containing time series
 #' @export
-plot_time_series <- function(dataset) {
-  dataset %>%
+plot_time_series <- function(ts) {
+  ts %>%
     gather(species, abundance, -time) %>%
     ggplot(aes(time, abundance, group = species, color = species)) +
     geom_line() +
