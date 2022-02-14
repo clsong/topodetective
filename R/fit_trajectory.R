@@ -1,66 +1,128 @@
-fit_parameters <- function(data, topology, map = F){
-  if(map == T) pb$tick()$print()
-
-  species_num <- ncol(data) - 1
-
-  log_diff <- data %>%
+#' Transform a time series data into a tibble that is ready to fit the regression
+#'
+#' @return A tibble with log change of species abundance with original abundance
+#' @param ts Time series data
+#' @export
+preprocess_ts <- function(ts) {
+  log_diff <- ts %>%
     mutate_at(vars(matches("x")), log) %>%
-    mutate_all(~.-lag(.)) %>%
+    mutate_all(~ . - lag(.)) %>%
     drop_na() %>%
     mutate(row = row_number()) %>%
     gather(key, dlogN, -time, -row) %>%
-    mutate(dlogN_dt = dlogN/time) %>%
+    mutate(dlogN_dt = dlogN / time) %>%
     select(-time, -dlogN) %>%
     spread(key, dlogN_dt) %>%
-    select(-row)
+    select(-row) %>%
+    mutate(time = ts$time[-nrow(ts)])
 
-  abundance <- data[-nrow(data),-1]
-
-  data_fit <- bind_cols(
-    log_diff,
-    abundance
-  ) %>%
-    set_colnames(c(paste0("dx", 1:num), paste0("x", 1:num)))
-
-  get_coef <- function(variable, data_fit, topology){
-    factors <- paste0("x", which(topology[variable, ] == 1))
-    formula <- as.formula(paste(paste0("dx", variable), "~", paste(factors, collapse="+")))
-    coef <- lm(formula, data= data_fit) %>%
-      broom::tidy() %>%
-      pull(estimate)
-    names(coef) <- c('r', factors)
-    if(length(coef) < num + 1){
-      zero <- rep(0, num + 1 - length(coef))
-      names(zero) <- setdiff(c('r', paste0("x", 1:num)), names(coef))
-      coef <- c(coef, zero)
-    }
-    coef %>%
-      enframe() %>%
-      arrange(name) %>%
-      select(-name)
-  }
-
-  1:species_num %>%
-    map_dfc(~get_coef(variable = ., data_fit, topology)) %>%
-    t() %>%
-    as_tibble() %>%
-    magrittr::set_colnames(c('r', paste0("a", 1:num)))
+  log_diff %>%
+    gather(species, log_change, -time) %>%
+    left_join(ts, by = "time")
+  # log_diff %>%
+  #   gather(species, log_change, -time) %>%
+  #   ggplot(aes(time, log_change, color=species)) +
+  #   geom_line()
 }
 
-fit_simulation <- function(fitted, map = F){
-  if(map == T) pb$tick()$print()
+#' Find a regression methods (linear, lasso, or ridge)
+#'
+#' @return A model specification
+#' @param model_name Name of the model
+#' @export
+choose_regression_model <- function(model_name) {
+  if (model_name == "linear") {
+    model <- linear_reg() %>%
+      set_engine("lm")
+  } else if (model_name == "lasso") {
+    model <- linear_reg(
+      mode = "regression",
+      penalty = 1,
+      mixture = 1
+    ) %>%
+      set_engine("glmnet")
+  } else if (model_name == "ridge") {
+    model <- linear_reg(
+      mode = "regression",
+      penalty = 1,
+      mixture = 0
+    ) %>%
+      set_engine("glmnet")
+  }
+  model
+}
+
+#' Fit interaction matrix with given topology and intrinsic growth rates from time series
+#'
+#' @return A tibble with simulated time series of species abundances
+#' @param Sigma Interaction matrix
+#' @param r intrinsic growth rates
+#' @param state_initial
+#' @param time_range
+#' @export
+fit_parameters <- function(ts_species,
+                           reg_model = choose_regression_model("linear"),
+                           topology_all) {
+  species_num <- ncol(ts_species) - 3
+
+  if (missing(topology_all)) {
+    topology_all <- rep(list(0:1), species_num) %>%
+      expand.grid() %>%
+      as_tibble() %>%
+      mutate(topology_label = row_number()) %>%
+      nest(topology = -topology_label)
+  }
+
+  reg_recipe <- ts_species %>%
+    select(-time, -species) %>%
+    {
+      recipe(log_change ~ ., data = .)
+    }
+
+  # df_split <- initial_time_split(ts_species, prop = 3 / 4)
+  # df_train <- training(df_split)
+  # df_test <- testing(df_split)
+
+  fitted_models <- topology_all %>%
+    mutate(workflow_fitted = map(topology, function(topology) {
+      if (sum(topology == 0) > 0) {
+        reg_recipe_local <- reg_recipe %>%
+          step_rm(paste0("x", which(topology == 0)))
+      } else{
+        reg_recipe_local <- reg_recipe
+      }
+
+      workflow() %>%
+        add_model(reg_model) %>%
+        add_recipe(reg_recipe_local) %>%
+        fit(data = ts_species)
+    }))
+
+  fitted_models %>%
+    mutate(
+      r2 = map_dbl(workflow_fitted, ~ glance(.)$r.squared),
+      estimate = map(workflow_fitted, tidy)
+    ) %>%
+    unnest(estimate) %>%
+    select(topology, r2, term, estimate) %>%
+    pivot_wider(names_from = term, values_from = estimate) %>%
+    rename(r = `(Intercept)`)
+}
+
+fit_simulation <- function(fitted, map = F) {
+  if (map == T) pb$tick()$print()
 
   Sigma <- fitted %>%
     select(-r) %>%
     as.matrix()
 
-  r <- fitted[,1] %>% unlist()
+  r <- fitted[, 1] %>% unlist()
 
-  SolutionOde(Sigma, r = r, N0 = state, MaxTime = max(times)) %>%
+  generate_time_series_LV(Sigma, r = r, N0 = state_initial, MaxTime = max(time_range)) %>%
     as_tibble()
 }
 
-plot_interactions <- function(fitted, topology_ground){
+plot_interactions <- function(fitted, topology_ground) {
   bind_cols(
     fitted %>%
       select(-r) %>%
@@ -76,14 +138,14 @@ plot_interactions <- function(fitted, topology_ground){
       rename(ground = value)
   ) %>%
     ggplot(aes(ground, fit)) +
-    geom_point(size =2) +
-    geom_abline(slope=1,intercept = 0) +
-    theme_bw()+
+    geom_point(size = 2) +
+    geom_abline(slope = 1, intercept = 0) +
+    theme_bw() +
     theme(aspect.ratio = 1)
 }
 
-plot_topology <- function(fitted){
-  num <- ncol(fitted)-1
+plot_topology <- function(fitted) {
+  num <- ncol(fitted) - 1
 
   n <- tibble(
     name = 1:num,
@@ -98,10 +160,12 @@ plot_topology <- function(fitted){
     magrittr::set_colnames(1:num) %>%
     magrittr::set_rownames(1:num) %>%
     melt() %>%
-    rename(from = Var1,
-           to = Var2) %>%
-    mutate(color = if_else(value > 0, 'dodgerblue', 'firebrick2')) %>%
-    mutate(value = abs(2*value))
+    rename(
+      from = Var1,
+      to = Var2
+    ) %>%
+    mutate(color = if_else(value > 0, "dodgerblue", "firebrick2")) %>%
+    mutate(value = abs(2 * value))
 
   create_graph() %>%
     add_nodes_from_table(
@@ -120,8 +184,7 @@ plot_topology <- function(fitted){
     render_graph(layout = "circular")
 }
 
-plot_fit_vs_simu <- function(dataset, times, simu, save = F, topology_label = F){
-
+plot_fit_vs_simu <- function(dataset, times, simu, save = F, topology_label = F) {
   p <- bind_rows(
     dataset %>%
       as_tibble() %>%
@@ -134,10 +197,10 @@ plot_fit_vs_simu <- function(dataset, times, simu, save = F, topology_label = F)
   ) %>%
     ggplot(aes(time, value, group = type, color = type)) +
     geom_rect(aes(xmin = 0, xmax = times[split_end], ymin = -Inf, ymax = Inf),
-              fill = "#F9F4FB", alpha = 1, linetype = 0
+      fill = "#F9F4FB", alpha = 1, linetype = 0
     ) +
     geom_rect(aes(xmin = times[split_end], xmax = max(times), ymin = -Inf, ymax = Inf),
-              fill = "#FEF7F2", alpha = 1, linetype = 0
+      fill = "#FEF7F2", alpha = 1, linetype = 0
     ) +
     geom_line() +
     facet_wrap(~key) +
@@ -147,49 +210,48 @@ plot_fit_vs_simu <- function(dataset, times, simu, save = F, topology_label = F)
       aspect.ratio = 1
     )
 
-  if(save == T){
-    ggsave(paste0(topology_label, '-fit_vs_simu.pdf'), p)
-  } else{
+  if (save == T) {
+    ggsave(paste0(topology_label, "-fit_vs_simu.pdf"), p)
+  } else {
     p
   }
 }
 
-calculate_NRMSE <- function(sim, obs){
+calculate_NRMSE <- function(sim, obs) {
   # (sim-obs)^2 %>%
   #   mean() %>%
   #   sqrt()/mean(obs)
 
-  sqrt(mean(sim-obs)^2)/(max(obs)-mean(obs))
+  sqrt(mean(sim - obs)^2) / (max(obs) - mean(obs))
 }
 
-evaluate_fit <- function(simu, dataset, map = F){
-  if(map == T) pb$tick()$print()
+evaluate_fit <- function(simu, dataset, map = F) {
+  if (map == T) pb$tick()$print()
 
   x <- simu %>%
-    filter(time %in% times) %>%
-    gather(key, value_simu, -time)
+    filter(time %in% time_range) %>%
+    gather(key, value_simu, -time) %>%
+    mutate_at(c("time", "value_simu"), as.numeric)
 
   y <- dataset %>%
-    as_tibble() %>%
-    mutate(time = times) %>%
     gather(key, value_ground, -time)
 
-  left_join(x,y) %>%
+  left_join(x, y) %>%
     group_by(key) %>%
-    summarise(NRMSE = calculate_NRMSE(value_simu, value_ground),
-              correlation = cor(value_simu, value_ground)
+    summarise(
+      NRMSE = calculate_NRMSE(value_simu, value_ground),
+      correlation = cor(value_simu, value_ground)
     )
 }
 
-generate_topology <- function(all_topologies, j){
-  offdiag <- all_topologies[j,] %>%
+generate_topology <- function(all_topologies, j) {
+  offdiag <- all_topologies[j, ] %>%
     unlist()
 
   topology <- matrix(NA, ncol = num, nrow = num)
-  topology[lower.tri(topology)] <- offdiag[1:(length(offdiag)/2)]
-  topology[upper.tri(topology)] <- offdiag[-(1:(length(offdiag)/2))]
+  topology[lower.tri(topology)] <- offdiag[1:(length(offdiag) / 2)]
+  topology[upper.tri(topology)] <- offdiag[-(1:(length(offdiag) / 2))]
   diag(topology) <- rep(1, num)
 
   topology
 }
-

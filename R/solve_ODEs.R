@@ -32,6 +32,28 @@ generate_time_series <- function(eqns_per,
     mutate_all(as.numeric)
 }
 
+#' Simulated time series of species abundances
+#'
+#' @return A tibble with simulated time series of species abundances
+#' @param Sigma Interaction matrix
+#' @param r intrinsic growth rates
+#' @param state_initial
+#' @param time_range
+#' @export
+generate_time_series_LV <- function(Sigma, r, state_initial, time_range) {
+  alpha <- Sigma
+  parms <- list(r = r, alpha = alpha)
+  delta_t <- 0.01 # time step
+  time_step <- seq(0, max(time_range), by = delta_t) # sequence of time
+  model <- function(t, N, parms) {
+    dN <- N * (parms$r + parms$alpha %*% N) + 1e-14
+    list(dN)
+  }
+  sol <- ode(state_initial, time_step, model, parms, method = "ode45")
+  return(sol)
+}
+
+
 #' Plot time series of species abundance
 #'
 #' @return A ggplot2 object
@@ -68,24 +90,3 @@ deqn_per <- function(eqns_per, dataset) {
     map_dfr(~ D(.x))
 }
 
-#' Simulated time series of species abundances
-#'
-#' @import deSolve
-#' @return A tibble with simulated time series of species abundances
-#' @param Sigma
-#' @param r
-#' @param N0
-#' @param MaxTime
-#' @export
-generate_time_series_LV <- function(Sigma, r, N0, MaxTime = 2000) {
-  alpha <- Sigma
-  parms <- list(r = r, alpha = alpha)
-  delta_t <- 0.01 # time step
-  time_step <- seq(0, MaxTime, by = delta_t) # sequence of time
-  model <- function(t, N, parms) {
-    dN <- N * (parms$r + parms$alpha %*% N) + 1e-14
-    list(dN)
-  }
-  sol <- ode(N0, time_step, model, parms, method = "ode45")
-  return(sol)
-}

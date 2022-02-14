@@ -7,6 +7,13 @@ library(tidyr)
 library(ggplot2)
 library(jtools)
 library(rsample)
+library(tibble)
+library(broom)
+library(recipes)
+library(parsnip)
+library(workflows)
+library(tune)
+library(yardstick)
 # library(here)
 # library(Matrix)
 # library(compiler)
@@ -29,9 +36,11 @@ library(rsample)
 # library(DiagrammeR)
 # library(rlang)
 
-source("R/equations.r")
-source("R/solve_ODEs.R")
-source("R/fit_trajectory.R")
+# source("R/equations.r")
+# source("R/solve_ODEs.R")
+# source("R/fit_trajectory.R")
+
+library(InferInteractions)
 
 get_classic_dynamics("chaos") # choose a dynamic
 
@@ -41,10 +50,12 @@ ts <- generate_time_series(eqns_per, time_range, state_initial, species_num) # s
 plot_time_series(ts)
 
 # fitted ------------------------------------------------------------------
-ts_split <- initial_time_split(ts, prop = 3/4)
 
-train_ts <- training(ts_split)
-test_ts  <- testing(ts_split)
+ts_tidy <- preprocess_ts(ts)
+
+ts_species <- ts_tidy %>%
+  filter(species == 'x1')
+reg_model <- choose_regression_model("linear")
 
 topology <- topology_ground
 topology[topology != 0 ] <- 1
@@ -52,11 +63,10 @@ topology[topology != 0 ] <- 1
 fitted <- fit_parameters(train_ts, topology)
 simu <- fit_simulation(fitted)
 
-evaluate_fit(simu, dataset)
+evaluate_fit(simu, ts)
 
 plot_topology(fitted)
 plot_fit_vs_simu(dataset, times, simu)
-
 
 # exmaine all topologies-----------------------------------------------------------------
 all_topologies <- rep(list(0:1), num^2 - num) %>%
