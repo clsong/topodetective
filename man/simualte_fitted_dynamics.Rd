@@ -6,6 +6,9 @@
 \usage{
 simualte_fitted_dynamics(topology_fitted)
 }
+\arguments{
+\item{topology_fitted}{The fitted parameter of the dynamics}
+}
 \value{
 A tibble with simulated time series of species abundances
 }

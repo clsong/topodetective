@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit_trajectory.R
 \name{choose_regression_model}
 \alias{choose_regression_model}
-\title{Find a regression methods (linear, lasso, or ridge)}
+\title{Find a regression method (linear, lasso, or ridge)}
 \usage{
 choose_regression_model(model_name)
 }
@@ -13,5 +13,5 @@ choose_regression_model(model_name)
 A model specification
 }
 \description{
-Find a regression methods (linear, lasso, or ridge)
+Find a regression method (linear, lasso, or ridge)
 }

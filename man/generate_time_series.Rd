@@ -6,6 +6,15 @@
 \usage{
 generate_time_series(eqns_per, time_range, state_initial, species_num)
 }
+\arguments{
+\item{eqns_per}{Population dynamics}
+
+\item{time_range}{Time range to run the simulation}
+
+\item{state_initial}{Initial species abundances}
+
+\item{species_num}{Number of all species}
+}
 \value{
 A tibble with simulated time series of species abundances
 }

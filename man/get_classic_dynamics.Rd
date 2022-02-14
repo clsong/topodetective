@@ -4,7 +4,13 @@
 \alias{get_classic_dynamics}
 \title{Get the parameters for some classic population dynamics}
 \usage{
-get_classic_dynamics(equation_name)
+get_classic_dynamics(
+  equation_name,
+  state_initial,
+  time_range,
+  species_num,
+  topology_ground
+)
 }
 \arguments{
 \item{equation_name}{Name of the classic population dynamics}

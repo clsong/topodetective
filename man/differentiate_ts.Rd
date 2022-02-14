@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit_trajectory.R
 \name{differentiate_ts}
 \alias{differentiate_ts}
-\title{Transform a time series data into a tibble that is ready to fit the regression}
+\title{Get the deriative of a time series}
 \usage{
 differentiate_ts(ts)
 }
@@ -10,8 +10,8 @@ differentiate_ts(ts)
 \item{ts}{Time series data}
 }
 \value{
-A tibble with log change of species abundance with original abundance
+A tibble with original speecies abundance and its first derivative
 }
 \description{
-Transform a time series data into a tibble that is ready to fit the regression
+Get the deriative of a time series
 }

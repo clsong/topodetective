@@ -10,6 +10,13 @@ fit_interaction_parameters(
   topology_all
 )
 }
+\arguments{
+\item{ts_species}{Time series data of a single species}
+
+\item{reg_model}{Which regression model to use}
+
+\item{topology_all}{All possible topology that are used to fit}
+}
 \value{
 A tibble with fitted parameters
 }

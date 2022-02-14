@@ -1,6 +1,6 @@
-#' Transform a time series data into a tibble that is ready to fit the regression
+#' Get the deriative of a time series
 #'
-#' @return A tibble with log change of species abundance with original abundance
+#' @return A tibble with original speecies abundance and its first derivative
 #' @param ts Time series data
 #' @export
 differentiate_ts <- function(ts) {
@@ -30,7 +30,7 @@ differentiate_ts <- function(ts) {
     left_join(ts, by = "time")
 }
 
-#' Find a regression methods (linear, lasso, or ridge)
+#' Find a regression method (linear, lasso, or ridge)
 #'
 #' @return A model specification
 #' @param model_name Name of the model
@@ -60,9 +60,9 @@ choose_regression_model <- function(model_name) {
 #' Fit interaction matrix with given topology and intrinsic growth rates from time series
 #'
 #' @return A tibble with fitted parameters
-#' @param ts_species
-#' @param reg_model
-#' @param topology_all
+#' @param ts_species  Time series data of a single species
+#' @param reg_model Which regression model to use
+#' @param topology_all All possible topology that are used to fit
 #' @export
 fit_interaction_parameters <- function(ts_species,
                            reg_model = choose_regression_model("linear"),
@@ -116,7 +116,7 @@ fit_interaction_parameters <- function(ts_species,
 #' Simulate time series from fitted parameters
 #'
 #' @return A tibble with simulated time series of species abundances
-#' @param topology_fitted
+#' @param topology_fitted The fitted parameter of the dynamics
 #' @export
 simualte_fitted_dynamics <- function(topology_fitted){
                            # state_initial = state_initial,
@@ -143,11 +143,10 @@ simualte_fitted_dynamics <- function(topology_fitted){
 #' Plot simulated time series with fitted parameters vs true time series
 #'
 #' @return A ggplot2 object
-#' @param ts
-#' @param ts_simu
+#' @param ts original time series
+#' @param ts_simu simualted time series
 #' @export
 plot_true_vs_simu <- function(ts, ts_simu) {
-
   bind_rows(
     ts %>%
       mutate(type = 'true'),
@@ -163,19 +162,13 @@ plot_true_vs_simu <- function(ts, ts_simu) {
       legend.position = 'top',
       legend.title = element_blank()
     )
-
-  # if (save == T) {
-  #   ggsave(paste0(topology_label, "-fit_vs_simu.pdf"), p)
-  # } else {
-  #   p
-  # }
 }
 
 #' Evaluate how close the simulated time series with fitted parameters is to true time series
 #'
-#' @return value of NRMSE
-#' @param ts
-#' @param ts_simu
+#' @return value of root-mean-square deviation
+#' @param ts original time series
+#' @param ts_simu simualted time series
 #' @export
 evaluate_fit <- function(ts, ts_simu) {
   calculate_NRMSE <- function(sim, obs) {
@@ -187,10 +180,10 @@ evaluate_fit <- function(ts, ts_simu) {
     mean()
 }
 
-#' EPlot the interaction network
+#' Plot the interaction network and intrinsic growth rates
 #'
 #' @return A ggraph project
-#' @param topology
+#' @param topology A tibble with species intrinsic growth rates and interaction strength
 #' @export
 plot_interaction_topology <- function(topology) {
   tbl_graph(

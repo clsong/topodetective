@@ -6,8 +6,13 @@
 \usage{
 evaluate_fit(ts, ts_simu)
 }
+\arguments{
+\item{ts}{original time series}
+
+\item{ts_simu}{simualted time series}
+}
 \value{
-value of NRMSE
+value of root-mean-square deviation
 }
 \description{
 Evaluate how close the simulated time series with fitted parameters is to true time series

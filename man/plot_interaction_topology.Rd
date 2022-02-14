@@ -2,13 +2,16 @@
 % Please edit documentation in R/fit_trajectory.R
 \name{plot_interaction_topology}
 \alias{plot_interaction_topology}
-\title{EPlot the interaction network}
+\title{Plot the interaction network and intrinsic growth rates}
 \usage{
 plot_interaction_topology(topology)
+}
+\arguments{
+\item{topology}{A tibble with species intrinsic growth rates and interaction strength}
 }
 \value{
 A ggraph project
 }
 \description{
-EPlot the interaction network
+Plot the interaction network and intrinsic growth rates
 }

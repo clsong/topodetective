@@ -1,10 +1,10 @@
 #' Simulated time series of species abundances
 #'
 #' @return A tibble with simulated time series of species abundances
-#' @param eqns_per
-#' @param time_range
-#' @param state_initial
-#' @param species_num
+#' @param eqns_per Population dynamics
+#' @param time_range Time range to run the simulation
+#' @param state_initial Initial species abundances
+#' @param species_num Number of all species
 #' @export
 generate_time_series <- function(eqns_per,
                                  time_range,
@@ -36,8 +36,8 @@ generate_time_series <- function(eqns_per,
 #' @return A tibble with simulated time series of species abundances
 #' @param Sigma Interaction matrix
 #' @param r intrinsic growth rates
-#' @param state_initial
-#' @param time_range
+#' @param state_initial Initial species abundances
+#' @param time_range Time range to run the simulation
 #' @export
 generate_time_series_LV <- function(Sigma, r, state_initial, time_range) {
   alpha <- Sigma

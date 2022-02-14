@@ -6,6 +6,11 @@
 \usage{
 plot_true_vs_simu(ts, ts_simu)
 }
+\arguments{
+\item{ts}{original time series}
+
+\item{ts_simu}{simualted time series}
+}
 \value{
 A ggplot2 object
 }
