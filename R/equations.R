@@ -36,7 +36,7 @@ get_classic_dynamics <- function(equation_name) {
 
 
     state_initial <- c(x1 = .8, x2 = .4, x3 = .3, x4 = .7)
-    time_range <- seq(0, 500, by = .05)
+    time_range <- seq(0, 50, by = .01)
     species_num <- length(eqns_per)
 
     topology_ground <-
@@ -49,7 +49,7 @@ get_classic_dynamics <- function(equation_name) {
       as_tibble() %>%
         set_names(paste0("x", 1:species_num)) %>%
         mutate(species = paste0("x", 1:species_num)) %>%
-        mutate(r = rep(1, 4))
+        mutate(r = c(1, .72, 1.53, 1.27))
   }
 
   assign("state_initial", state_initial, envir = globalenv())

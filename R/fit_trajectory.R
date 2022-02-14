@@ -3,26 +3,31 @@
 #' @return A tibble with log change of species abundance with original abundance
 #' @param ts Time series data
 #' @export
-preprocess_ts <- function(ts) {
-  log_diff <- ts %>%
+differentiate_ts <- function(ts) {
+  # log_diff <- ts %>%
+  #   mutate_at(vars(matches("x")), log) %>%
+  #   mutate_all(~ . - lag(.)) %>%
+  #   drop_na() %>%
+  #   mutate(row = row_number()) %>%
+  #   gather(key, dlogN, -time, -row) %>%
+  #   mutate(dlogN_dt = dlogN / time) %>%
+  #   select(-time, -dlogN) %>%
+  #   spread(key, dlogN_dt) %>%
+  #   select(-row) %>%
+  #   mutate(time = ts$time[-nrow(ts)])
+  log_diff <-
+    ts %>%
     mutate_at(vars(matches("x")), log) %>%
-    mutate_all(~ . - lag(.)) %>%
-    drop_na() %>%
-    mutate(row = row_number()) %>%
-    gather(key, dlogN, -time, -row) %>%
-    mutate(dlogN_dt = dlogN / time) %>%
-    select(-time, -dlogN) %>%
-    spread(key, dlogN_dt) %>%
-    select(-row) %>%
-    mutate(time = ts$time[-nrow(ts)])
+    gather(key, logN, -time) %>%
+    group_by(key) %>%
+    mutate(dlogN_dt = predict(sm.spline(time, logN), time, 1)) %>%
+    ungroup() %>%
+    select(-logN) %>%
+    spread(key, dlogN_dt)
 
   log_diff %>%
     gather(species, log_change, -time) %>%
     left_join(ts, by = "time")
-  # log_diff %>%
-  #   gather(species, log_change, -time) %>%
-  #   ggplot(aes(time, log_change, color=species)) +
-  #   geom_line()
 }
 
 #' Find a regression methods (linear, lasso, or ridge)
@@ -103,7 +108,7 @@ fit_interaction_parameters <- function(ts_species,
       estimate = map(workflow_fitted, tidy)
     ) %>%
     unnest(estimate) %>%
-    select(topology, R2, term, estimate) %>%
+    select(topology_label, topology, R2, term, estimate) %>%
     pivot_wider(names_from = term, values_from = estimate) %>%
     rename(r = `(Intercept)`)
 }

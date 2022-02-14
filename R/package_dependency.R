@@ -16,4 +16,5 @@
 #' @import patchwork
 #' @import tidygraph
 #' @import ggraph
+#' @import pspline
 NULL

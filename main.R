@@ -17,8 +17,9 @@ library(yardstick)
 library(patchwork)
 library(tidygraph)
 library(ggraph)
+library(tidygraph)
+library(pspline)
 
-theme_set(jtools::theme_nice())
 library(InferInteractions)
 
 get_classic_dynamics("chaos") # choose a dynamic
@@ -30,22 +31,24 @@ plot_time_series(ts)
 
 # fitted ------------------------------------------------------------------
 
+# reg_model <- choose_regression_model("linear")
 reg_model <- choose_regression_model("linear")
 
+topology_all <- rep(list(0:1), species_num) %>%
+  expand.grid() %>%
+  as_tibble() %>%
+  mutate(topology_label = row_number()) %>%
+  nest(topology = -topology_label)
+
 fitted_models <- ts %>%
-  preprocess_ts() %>%
+  differentiate_ts() %>%
   group_split(species) %>%
-  map(fit_interaction_parameters) %>%
-  bind_rows(.id = 'species') %>%
+  map(~fit_interaction_parameters(., reg_model, topology_all)) %>%
+  bind_rows(.id = "species") %>%
   mutate(species = paste0("x", species))
 
-# fitted_models %>%
-#   mutate(topology_label = as.factor(topology_label)) %>%
-#   ggplot(aes(forcats::fct_reorder(topology_label, r2), r2, color = species)) +
-#   geom_point()
-
 topology_fitted <- fitted_models %>%
-  filter(R2 > .8) %>%
+  filter(R2 > .95) %>%
   group_by(species) %>%
   sample_n(1) %>%
   # filter(R2 == max(R2)) %>%
@@ -60,3 +63,13 @@ evaluate_fit(ts, ts_simu)
 
 plot_interaction_topology(topology_ground)
 plot_interaction_topology(topology_fitted)
+
+fitted_models %>%
+  filter(
+    (species == "x1" & topology_label == 8) |
+    (species == "x2" & topology_label == 15) |
+    (species == "x3" & topology_label == 14) |
+    (species == "x4" & topology_label == 16)
+  )
+topology_ground
+
