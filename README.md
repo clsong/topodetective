@@ -1,12 +1,14 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# InferInteractions
+# topodetective
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of InferInteractions is to …
+The goal of topodetective is to infer topology of species interactions
+from time series of species abundance. We use a regression-based method,
+which can efficiently enumerate all possible topologies.
 
 ## Installation
 
