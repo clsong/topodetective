@@ -4,16 +4,16 @@
 \alias{generate_time_series_LV}
 \title{Simulated time series of species abundances}
 \usage{
-generate_time_series_LV(Sigma, r, state_initial, time_range)
+generate_time_series_LV(topology, state_initial, time_range)
 }
 \arguments{
-\item{Sigma}{Interaction matrix}
-
-\item{r}{intrinsic growth rates}
-
 \item{state_initial}{Initial species abundances}
 
 \item{time_range}{Time range to run the simulation}
+
+\item{Sigma}{Interaction matrix}
+
+\item{r}{intrinsic growth rates}
 }
 \value{
 A tibble with simulated time series of species abundances

@@ -39,11 +39,19 @@ generate_time_series <- function(eqns_per,
 #' @param state_initial Initial species abundances
 #' @param time_range Time range to run the simulation
 #' @export
-generate_time_series_LV <- function(Sigma, r, state_initial, time_range) {
-  alpha <- Sigma
+generate_time_series_LV <- function(topology, state_initial, time_range) {
+  alpha <- topology %>%
+    select(starts_with("x")) %>%
+    mutate(
+      across(everything(), ~replace_na(.x, 0))
+    ) %>%
+    as.matrix()
+
+  r <- topology %>%
+    pull(r) %>%
+    unlist()
+
   parms <- list(r = r, alpha = alpha)
-  # delta_t <- 0.01 # time step
-  # time_step <- seq(0, max(time_range), by = delta_t) # sequence of time
   model <- function(t, N, parms) {
     dN <- N * (parms$r + parms$alpha %*% N) + 1e-14
     list(dN)

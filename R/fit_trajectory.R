@@ -121,20 +121,8 @@ fit_interaction_parameters <- function(ts_species,
 simualte_fitted_dynamics <- function(topology_fitted){
                            # state_initial = state_initial,
                            # time_range = time_range) {
-  Sigma <- topology_fitted %>%
-    select(starts_with("x")) %>%
-    mutate(
-      across(everything(), ~replace_na(.x, 0))
-    ) %>%
-    as.matrix()
-
-  r <- topology_fitted %>%
-    pull(r) %>%
-    unlist()
-
   generate_time_series_LV(
-    Sigma = Sigma,
-    r = r,
+    topology = topology_fitted,
     state_initial = state_initial,
     time_range = time_range
   )
