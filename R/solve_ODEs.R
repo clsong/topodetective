@@ -52,10 +52,18 @@ generate_time_series_LV <- function(topology, state_initial, time_range, noise =
     unlist()
 
   parms <- list(r = r, alpha = alpha)
-  model <- function(t, N, parms) {
-    dN <- N * (parms$r + parms$alpha %*% N + N * rnorm(1, mean = 0, sd = 1)) + 1e-14
-    list(dN)
+  if(noise){
+    model <- function(t, N, parms) {
+      dN <- N * (parms$r + parms$alpha %*% N + N * rnorm(1, mean = 0, sd = .5)) + 1e-14
+      list(dN)
+    }
+  } else{
+    model <- function(t, N, parms) {
+      dN <- N * (parms$r + parms$alpha %*% N ) + 1e-14
+      list(dN)
+    }
   }
+
   ode(state_initial, time_range, model, parms, method = "ode45") %>%
     as_tibble() %>%
     mutate_all(as.numeric) %>%
