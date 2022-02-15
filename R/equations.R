@@ -6,28 +6,27 @@ get_classic_dynamics <- function(equation_name,
                                  state_initial,
                                  time_range,
                                  species_num,
-                                 topology_ground
-                                 ) {
+                                 topology_ground) {
   if (equation_name == "3_species_food_webs") {
     eqn1_per <- function(x1, x2, x3) (-x1 - 5 * x2 / (3 * x1 + 1) + 1)
     eqn2_per <- function(x1, x2, x3) (-0.1 * x3 / (2 * x2 + 1) + 5 * x1 / (3 * x1 + 1) - 0.4)
     eqn3_per <- function(x1, x2, x3) (.1 * x2 / (2 * x2 + 1) - .01)
     eqns_per <- list(eqn1_per, eqn2_per, eqn3_per)
 
-    if(missing(state_initial)){
+    if (missing(state_initial)) {
       state_initial <- c(
         x1 = 0.003328141,
         x2 = 0.497268520,
         x3 = 0.868445870
       )
     }
-    if(missing(time_range)){
+    if (missing(time_range)) {
       time_range <- seq(0, 50, by = .01)
     }
-    if(missing(species_num)){
+    if (missing(species_num)) {
       species_num <- 3
     }
-    if(missing(topology_ground)){
+    if (missing(topology_ground)) {
       topology_ground <- matrix(c(
         -1, -1, 0,
         1, 0, -1,
@@ -46,16 +45,16 @@ get_classic_dynamics <- function(equation_name,
     # eqn3_per <- function(x1,x2,x3,x4) (1- 2.33*x1/(x1+x2) - x3 - .47*x4) * 1.53
     # eqn4_per <- function(x1,x2,x3,x4) (1- 1.21*x1 - .51*x2 - .35*x3- x4) * 1.27
 
-    if(missing(state_initial)){
+    if (missing(state_initial)) {
       state_initial <- c(x1 = .8, x2 = .4, x3 = .3, x4 = .7)
     }
-    if(missing(time_range)){
+    if (missing(time_range)) {
       time_range <- seq(0, 50, by = .01)
     }
-    if(missing(species_num)){
+    if (missing(species_num)) {
       species_num <- 4
     }
-    if(missing(topology_ground)){
+    if (missing(topology_ground)) {
       topology_ground <-
         matrix(c(
           -1, -1.09, -1.52, 0,
@@ -69,13 +68,33 @@ get_classic_dynamics <- function(equation_name,
         mutate(r = c(1, .72, 1.53, 1.27))
     }
   }
-  if(equation_name == "species_LV"){
-
+  if (equation_name == "random_LV") {
+    if (missing(state_initial)) {
+      state_initial <- c(x1 = .8, x2 = .4, x3 = .3, x4 = .7)
+    }
+    if (missing(time_range)) {
+      time_range <- seq(0, 50, by = .01)
+    }
+    if (missing(species_num)) {
+      species_num <- 3
+    }
+    if (missing(topology_ground)) {
+      Sigma <- runif(species_num^2, 0, 1) %>%
+        matrix(nrow = species_num)
+      r_star <- Sigma %*% runif(species_num, 0, 1)
+      topology_ground <- Sigma %>%
+        as_tibble() %>%
+        set_names(paste0("x", 1:species_num)) %>%
+        mutate(species = paste0("x", 1:species_num)) %>%
+        mutate(r = r_star[, 1])
+    }
   }
 
   assign("state_initial", state_initial, envir = globalenv())
   assign("time_range", time_range, envir = globalenv())
   assign("species_num", species_num, envir = globalenv())
-  assign("eqns_per", eqns_per, envir = globalenv())
+  if(equation_name != "random_LV"){
+    assign("eqns_per", eqns_per, envir = globalenv())
+  }
   assign("topology_ground", topology_ground, envir = globalenv())
 }
