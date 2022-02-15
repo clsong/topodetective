@@ -34,8 +34,7 @@ generate_time_series <- function(eqns_per,
 #' Simulated time series of species abundances
 #'
 #' @return A tibble with simulated time series of species abundances
-#' @param Sigma Interaction matrix
-#' @param r intrinsic growth rates
+#' @param topology interaction strength and intrinsic growth rates
 #' @param state_initial Initial species abundances
 #' @param time_range Time range to run the simulation
 #' @export
@@ -58,7 +57,8 @@ generate_time_series_LV <- function(topology, state_initial, time_range) {
   }
   ode(state_initial, time_range, model, parms, method = "ode45") %>%
     as_tibble() %>%
-    mutate_all(as.numeric)
+    mutate_all(as.numeric) %>%
+    set_names(c("time", paste0("x", 1:length(state_initial))))
 }
 
 

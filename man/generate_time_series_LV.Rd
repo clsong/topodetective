@@ -7,13 +7,11 @@
 generate_time_series_LV(topology, state_initial, time_range)
 }
 \arguments{
+\item{topology}{interaction strength and intrinsic growth rates}
+
 \item{state_initial}{Initial species abundances}
 
 \item{time_range}{Time range to run the simulation}
-
-\item{Sigma}{Interaction matrix}
-
-\item{r}{intrinsic growth rates}
 }
 \value{
 A tibble with simulated time series of species abundances

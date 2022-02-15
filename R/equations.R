@@ -81,8 +81,9 @@ get_classic_dynamics <- function(equation_name,
     if (missing(topology_ground)) {
       Sigma <- runif(species_num^2, -1, 1) %>%
         matrix(nrow = species_num)
-      diag(Sigma) <- -1.2*apply(Sigma, 1, function(x) sum(abs(x)))
-      r_star <- Sigma %*% runif(species_num, 0, 1)
+      diag(Sigma) <- -1.1*apply(Sigma, 1, function(x) sum(abs(x)))
+      N_star <- runif(species_num, 0, 5)
+      r_star <- -0.1 * Sigma %*% N_star
       topology_ground <- Sigma %>%
         as_tibble() %>%
         set_names(paste0("x", 1:species_num)) %>%
