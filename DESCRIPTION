@@ -23,6 +23,7 @@ Imports:
     purrr,
     recipes,
     rsample,
+    stringr,
     tibble,
     tidygraph,
     tidyr,

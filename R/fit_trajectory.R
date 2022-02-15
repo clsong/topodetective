@@ -197,3 +197,19 @@ plot_interaction_topology <- function(topology) {
     theme_graph(foreground = 'steelblue', fg_text_colour = 'white') +
     theme(aspect.ratio = 1)
 }
+
+#' Get the label of the specific topology
+#'
+#' @return A ggraph project
+#' @param topology Specific topology
+#' @param topology_all All possible topology that are used to fit
+#' @export
+get_topology_label <- function(topology, topology_all){
+  topology %>%
+    mutate_if(is.numeric, ~ ifelse(. != 0, 1, 0)) %>%
+    left_join(
+      topology_all %>%
+        unnest(topology) %>%
+        rename_all(~str_replace(., "Var", "x"))
+    )
+}
