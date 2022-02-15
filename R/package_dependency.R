@@ -16,5 +16,5 @@
 #' @import tidygraph
 #' @import ggraph
 #' @import pspline
-#' @import stringr
+#' @importFrom stringr str_replace
 NULL
