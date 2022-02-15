@@ -37,8 +37,9 @@ generate_time_series <- function(eqns_per,
 #' @param topology interaction strength and intrinsic growth rates
 #' @param state_initial Initial species abundances
 #' @param time_range Time range to run the simulation
+#' @param noise Whether there should be noise
 #' @export
-generate_time_series_LV <- function(topology, state_initial, time_range) {
+generate_time_series_LV <- function(topology, state_initial, time_range, noise = F) {
   alpha <- topology %>%
     select(starts_with("x")) %>%
     mutate(
@@ -52,7 +53,7 @@ generate_time_series_LV <- function(topology, state_initial, time_range) {
 
   parms <- list(r = r, alpha = alpha)
   model <- function(t, N, parms) {
-    dN <- N * (parms$r + parms$alpha %*% N) + 1e-14
+    dN <- N * (parms$r + parms$alpha %*% N + N * rnorm(1, mean = 0, sd = 1)) + 1e-14
     list(dN)
   }
   ode(state_initial, time_range, model, parms, method = "ode45") %>%

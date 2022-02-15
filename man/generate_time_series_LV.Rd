@@ -4,7 +4,7 @@
 \alias{generate_time_series_LV}
 \title{Simulated time series of species abundances}
 \usage{
-generate_time_series_LV(topology, state_initial, time_range)
+generate_time_series_LV(topology, state_initial, time_range, noise = F)
 }
 \arguments{
 \item{topology}{interaction strength and intrinsic growth rates}
@@ -12,6 +12,8 @@ generate_time_series_LV(topology, state_initial, time_range)
 \item{state_initial}{Initial species abundances}
 
 \item{time_range}{Time range to run the simulation}
+
+\item{noise}{Whether there should be noise}
 }
 \value{
 A tibble with simulated time series of species abundances
