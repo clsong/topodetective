@@ -8,6 +8,12 @@ get_LV_dynamics(species_num, conne, mu, sigma)
 }
 \arguments{
 \item{species_num}{Number of species}
+
+\item{conne}{Connectance}
+
+\item{mu}{Average inter-specific interaction strength * S}
+
+\item{sigma}{Standard deviation of inter-specific interaction strength * S^1/2}
 }
 \description{
 Get the parameters for the three phases of LV dynamics following Bunin (2017) PRE

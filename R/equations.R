@@ -104,6 +104,9 @@ get_classic_dynamics <- function(equation_name,
 #' Get the parameters for the three phases of LV dynamics following Bunin (2017) PRE
 #'
 #' @param species_num Number of species
+#' @param conne Connectance
+#' @param mu Average inter-specific interaction strength * S
+#' @param sigma Standard deviation of inter-specific interaction strength * S^1/2
 #' @export
 get_LV_dynamics <- function(species_num, conne, mu, sigma) {
   # mu <- 3
