@@ -19,6 +19,7 @@ differentiate_ts <- function(ts) {
     ts %>%
     mutate_at(vars(matches("x")), log) %>%
     gather(key, logN, -time) %>%
+    drop_na() %>%
     group_by(key) %>%
     mutate(dlogN_dt = predict(sm.spline(time, logN), time, 1)) %>%
     ungroup() %>%
