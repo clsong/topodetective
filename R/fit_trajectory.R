@@ -4,17 +4,6 @@
 #' @param ts Time series data
 #' @export
 differentiate_ts <- function(ts) {
-  # log_diff <- ts %>%
-  #   mutate_at(vars(matches("x")), log) %>%
-  #   mutate_all(~ . - lag(.)) %>%
-  #   drop_na() %>%
-  #   mutate(row = row_number()) %>%
-  #   gather(key, dlogN, -time, -row) %>%
-  #   mutate(dlogN_dt = dlogN / time) %>%
-  #   select(-time, -dlogN) %>%
-  #   spread(key, dlogN_dt) %>%
-  #   select(-row) %>%
-  #   mutate(time = ts$time[-nrow(ts)])
   log_diff <-
     ts %>%
     mutate_at(vars(matches("x")), log) %>%

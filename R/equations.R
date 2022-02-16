@@ -68,7 +68,7 @@ get_classic_dynamics <- function(equation_name,
         mutate(r = c(1, .72, 1.53, 1.27))
     }
   }
-  if (equation_name == "random_LV") {
+  if (equation_name == "random_stable_LV") {
     if (missing(state_initial)) {
       state_initial <- c(x1 = .8, x2 = .4, x3 = .3, x4 = .7)
     }
@@ -99,4 +99,29 @@ get_classic_dynamics <- function(equation_name,
     assign("eqns_per", eqns_per, envir = globalenv())
   }
   assign("topology_ground", topology_ground, envir = globalenv())
+}
+
+#' Get the parameters for the three phases of LV dynamics following Bunin (2017) PRE
+#'
+#' @param species_num Number of species
+#' @export
+get_LV_dynamics <- function(species_num, conne, mu, sigma) {
+  # mu <- 3
+  # conne <- 1
+  # sigma <- 3
+
+  alpha <- mu / species_num  + sigma * rnorm(species_num^2, 0, sqrt(1/species_num))
+  alpha <- alpha * rbinom(species_num^2, 1, conne)
+  alpha <- alpha %>%
+    matrix(nrow = species_num)
+  alpha <- - alpha
+  diag(alpha) <- -1
+
+  alpha
+
+  alpha %>%
+    as_tibble() %>%
+    set_names(paste0("x", 1:species_num)) %>%
+    mutate(species = paste0("x", 1:species_num)) %>%
+    mutate(r = rep(1, species_num))
 }
