@@ -94,7 +94,6 @@ fit_interaction_parameters <- function(ts_species,
 
   fitted_models %>%
     mutate(
-      # R2 = map_dbl(workflow_fitted, ~ glance(.)$r.squared),
       R2 = map_dbl(workflow_fitted, ~ glance(.)$adj.r.squared),
       estimate = map(workflow_fitted, tidy)
     ) %>%
