@@ -39,7 +39,8 @@ generate_time_series <- function(eqns_per,
 #' @param time_range Time range to run the simulation
 #' @param noise Whether there should be noise
 #' @export
-generate_time_series_LV <- function(topology, state_initial, time_range, noise = F) {
+generate_time_series_LV <- function(topology, state_initial, time_range,
+                                    noise = F, noise_level = .01) {
   alpha <- topology %>%
     select(starts_with("x")) %>%
     mutate(
@@ -52,22 +53,23 @@ generate_time_series_LV <- function(topology, state_initial, time_range, noise =
     unlist()
 
   parms <- list(r = r, alpha = alpha)
-  if(noise){
-    model <- function(t, N, parms) {
-      dN <- N * (parms$r + parms$alpha %*% N + rnorm(1, mean = 0, sd = .1)) + 1e-14
-      list(dN)
-    }
-  } else{
+
     model <- function(t, N, parms) {
       dN <- N * (parms$r + parms$alpha %*% N) + 1e-14
       list(dN)
     }
-  }
 
-  ode(state_initial, time_range, model, parms, method = "ode45") %>%
-    as_tibble() %>%
-    mutate_all(as.numeric) %>%
-    set_names(c("time", paste0("x", 1:length(state_initial))))
+    simu <- ode(state_initial, time_range, model, parms, method = "ode45") %>%
+      as_tibble() %>%
+      mutate_all(as.numeric) %>%
+      set_names(c("time", paste0("x", 1:length(state_initial))))
+
+    if(noise){
+      simu <- simu %>%
+        mutate_at(vars(starts_with('x')), function(a){a * rnorm(length(a), 1, noise_level)})
+    }
+
+    simu
 }
 
 
