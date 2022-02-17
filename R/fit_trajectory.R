@@ -148,3 +148,28 @@ get_topology_label <- function(topology, topology_all){
         rename_all(~str_replace(., "Var", "x"))
     )
 }
+
+#' Get the combinatories of models from highest R^2 from each species
+#'
+#' @return A tibble with top model candidates
+#' @param fitted_models Specific topology
+#' @param num_each_species How many topologies to choose for each species
+#' @export
+generate_top_model_candidates <- function(fitted_models, num_each_species = 3){
+  fitted_models %>%
+    select(species, topology_label, R2) %>%
+    group_by(species) %>%
+    top_n(num_each_species, R2) %>%
+    group_split() %>%
+    map(~.$topology_label) %>%
+    expand.grid() %>%
+    as_tibble() %>%
+    set_names(paste0("x", 1:species_num)) %>%
+    mutate(fitted_model_label = row_number()) %>%
+    gather(species, topology_label, -fitted_model_label) %>%
+    left_join(
+      fitted_models,
+      by = c("species", "topology_label")) %>%
+    group_split(fitted_model_label)
+
+}

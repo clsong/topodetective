@@ -78,3 +78,9 @@ evaluate_fit(ts, ts_simu)
 plot_true_vs_simu(ts, ts_simu)
 ```
 
+# ```{r dpi = 300}
+# library(ggraph)
+# plot_interaction_topology(topology_ground, title = 'Groundtruth') +
+#   plot_interaction_topology(topology_fitted, title = 'Fitted')
+# ```
+
