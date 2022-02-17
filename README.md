@@ -25,20 +25,26 @@ devtools::install_github("clsong/InferInteractions")
 This is a basic example which shows you how to solve a common problem:
 
 ``` r
-suppressPackageStartupMessages(library(tidyverse))
+library(tidyverse)
 library(topodetective)
-#> Registered S3 method overwritten by 'tune':
-#>   method                   from   
-#>   required_pkgs.model_spec parsnip
 
 get_classic_dynamics("4_species_chaos") # choose a population dynamic
+time_range <- seq(0, 50, by = .1)
 
-ts <- generate_time_series(eqns_per, time_range, state_initial, species_num) # simulate a dynamic
+set.seed(12345)
+ts <- generate_time_series_LV(
+  topology = topology_ground,
+  state_initial = state_initial,
+  time_range = time_range,
+  noise = T,
+  noise_level = .05
+) # simulate a dynamic
 
-# plot_time_series(ts)
+plot_time_series(ts)
 ```
 
-We then infer system parameters from time series alone. We choose all
+<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" /> We
+then infer system parameters from time series alone. We choose all
 possible topologies.
 
 ``` r
@@ -58,14 +64,25 @@ the fit.
 ``` r
 set.seed(123)
 topology_fitted <- fitted_models %>%
-  filter(R2 > .9) %>%
   group_by(species) %>%
+  top_n(3, R2) %>% 
   sample_n(1) %>%
   ungroup()
 
 ts_simu <- simualte_fitted_dynamics(topology_fitted)
 evaluate_fit(ts, ts_simu)
-#> [1] 0.01749783
+#> Warning in sim - obs: longer object length is not a multiple of shorter object
+#> length
+
+#> Warning in sim - obs: longer object length is not a multiple of shorter object
+#> length
+
+#> Warning in sim - obs: longer object length is not a multiple of shorter object
+#> length
+
+#> Warning in sim - obs: longer object length is not a multiple of shorter object
+#> length
+#> [1] 0.01567233
 
 plot_true_vs_simu(ts, ts_simu)
 ```

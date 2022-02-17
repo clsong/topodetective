@@ -33,15 +33,23 @@ devtools::install_github("clsong/InferInteractions")
 
 This is a basic example which shows you how to solve a common problem:
 
-```{r warning=F, dpi=300 }
-suppressPackageStartupMessages(library(tidyverse))
+```{r warning=F, message = F, dpi=300 }
+library(tidyverse)
 library(topodetective)
 
 get_classic_dynamics("4_species_chaos") # choose a population dynamic
+time_range <- seq(0, 50, by = .1)
 
-ts <- generate_time_series(eqns_per, time_range, state_initial, species_num) # simulate a dynamic
+set.seed(12345)
+ts <- generate_time_series_LV(
+  topology = topology_ground,
+  state_initial = state_initial,
+  time_range = time_range,
+  noise = T,
+  noise_level = .05
+) # simulate a dynamic
 
-# plot_time_series(ts)
+plot_time_series(ts)
 ```
 We then infer system parameters from time series alone. We choose all possible topologies.
 ```{r}
@@ -56,11 +64,11 @@ fitted_models <- ts %>%
 ```
 
 We then simulate the dynamics with the inferred parameters. We compare the fit.
-```{r, dpi=300 }
+```{r, dpi=300}
 set.seed(123)
 topology_fitted <- fitted_models %>%
-  filter(R2 > .9) %>%
   group_by(species) %>%
+  top_n(3, R2) %>% 
   sample_n(1) %>%
   ungroup()
 

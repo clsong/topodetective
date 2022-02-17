@@ -109,8 +109,6 @@ fit_interaction_parameters <- function(ts_species,
 #' @param topology_fitted The fitted parameter of the dynamics
 #' @export
 simualte_fitted_dynamics <- function(topology_fitted){
-                           # state_initial = state_initial,
-                           # time_range = time_range) {
   generate_time_series_LV(
     topology = topology_fitted,
     state_initial = state_initial,
