@@ -48,7 +48,7 @@ then infer system parameters from time series alone. We choose all
 possible topologies.
 
 ``` r
-reg_model <- choose_regression_model("linear")
+reg_model <- choose_regression_model("linear") # 'lasso' and 'ridge' are also available
 
 fitted_models <- ts %>%
   differentiate_ts() %>%
@@ -71,17 +71,36 @@ topology_fitted <- fitted_models %>%
 
 ts_simu <- simualte_fitted_dynamics(topology_fitted)
 evaluate_fit(ts, ts_simu)
-#> [1] 0.01567004
+#> Warning in sim - obs: longer object length is not a multiple of shorter object
+#> length
+
+#> Warning in sim - obs: longer object length is not a multiple of shorter object
+#> length
+
+#> Warning in sim - obs: longer object length is not a multiple of shorter object
+#> length
+
+#> Warning in sim - obs: longer object length is not a multiple of shorter object
+#> length
+#> [1] 0.01567233
 
 plot_true_vs_simu(ts, ts_simu)
 ```
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
+The fitted topology is different from the true topology.
+
 ``` r
-library(ggraph)
-plot_interaction_topology(topology_ground, title = 'Groundtruth') +
-  plot_interaction_topology(topology_fitted, title = 'Fitted')
+ library(ggraph)
+
+bind_rows(
+  topology_ground %>% 
+    mutate(facet = 'Groundtruth'),
+  topology_fitted %>% 
+    mutate(facet = 'Fitted'),
+) %>% 
+  plot_interaction_topology(facet = T) 
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />

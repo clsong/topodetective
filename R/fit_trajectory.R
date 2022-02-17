@@ -171,5 +171,4 @@ generate_top_model_candidates <- function(fitted_models, num_each_species = 3){
       fitted_models,
       by = c("species", "topology_label")) %>%
     group_split(fitted_model_label)
-
 }

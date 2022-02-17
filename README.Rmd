@@ -52,8 +52,8 @@ ts <- generate_time_series_LV(
 plot_time_series(ts)
 ```
 We then infer system parameters from time series alone. We choose all possible topologies.
-```{r}
-reg_model <- choose_regression_model("linear")
+```{r cache = T}
+reg_model <- choose_regression_model("linear") # 'lasso' and 'ridge' are also available
 
 fitted_models <- ts %>%
   differentiate_ts() %>%
@@ -78,9 +78,17 @@ evaluate_fit(ts, ts_simu)
 plot_true_vs_simu(ts, ts_simu)
 ```
 
-# ```{r dpi = 300}
-# library(ggraph)
-# plot_interaction_topology(topology_ground, title = 'Groundtruth') +
-#   plot_interaction_topology(topology_fitted, title = 'Fitted')
-# ```
+The fitted topology is different from the true topology.
+```{r dpi = 300}
+ library(ggraph)
+
+bind_rows(
+  topology_ground %>% 
+    mutate(facet = 'Groundtruth'),
+  topology_fitted %>% 
+    mutate(facet = 'Fitted'),
+) %>% 
+  plot_interaction_topology(facet = T) 
+```
+
 

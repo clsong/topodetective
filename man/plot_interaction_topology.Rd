@@ -4,12 +4,14 @@
 \alias{plot_interaction_topology}
 \title{Plot the interaction network and intrinsic growth rates}
 \usage{
-plot_interaction_topology(topology, title)
+plot_interaction_topology(topology, title, facet = F)
 }
 \arguments{
 \item{topology}{A tibble with species intrinsic growth rates and interaction strength}
 
 \item{title}{title of the ggplot}
+
+\item{facet}{Whether the graphs need to be faceted}
 }
 \value{
 A ggraph project
