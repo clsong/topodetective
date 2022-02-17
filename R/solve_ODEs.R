@@ -72,19 +72,6 @@ generate_time_series_LV <- function(topology, state_initial, time_range,
     simu
 }
 
-
-#' Plot time series of species abundance
-#' @return A ggplot2 object
-#' @param ts A tibble containing time series
-#' @export
-plot_time_series <- function(ts) {
-  ts %>%
-    gather(species, abundance, -time) %>%
-    ggplot(aes(time, abundance, group = species, color = species)) +
-    geom_line() +
-    theme_nice()
-}
-
 deqn_per <- function(eqns_per, dataset) {
   D <- function(i) {
     eqn <- eqns_per[[i]]
