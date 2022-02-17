@@ -159,11 +159,12 @@ evaluate_fit <- function(ts, ts_simu) {
 }
 
 #' Plot the interaction network and intrinsic growth rates
-#'
 #' @return A ggraph project
 #' @param topology A tibble with species intrinsic growth rates and interaction strength
+#' @param title title of the ggplot
 #' @export
-plot_interaction_topology <- function(topology) {
+plot_interaction_topology <- function(topology, title) {
+  if(missing(title)) title <- ""
   tbl_graph(
     nodes = topology %>%
       select(species, r),
@@ -181,6 +182,7 @@ plot_interaction_topology <- function(topology) {
                   arrow = arrow(length = unit(4, 'mm')),
                   end_cap = circle(6, 'mm')) +
     geom_node_point(aes(size = r)) +
+    ggtitle(title) +
     geom_edge_loop(aes(colour = strength)) +
     scale_edge_colour_viridis() +
     theme_graph(foreground = 'steelblue', fg_text_colour = 'white') +
